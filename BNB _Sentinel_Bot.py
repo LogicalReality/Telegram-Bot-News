@@ -2,13 +2,18 @@ import telebot
 import schedule
 import time
 import feedparser
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading
+import os
+from dotenv import load_dotenv
 
 # ==========================================
 # 1. CONFIG
 # ==========================================
-TOKEN = '8455682955:AAFKghKvdjOBwg9MIWPo3P9oum9586ljVrU'
+load_dotenv()
+TOKEN = os.getenv('TELEGRAM_TOKEN')
+if not TOKEN:
+    raise ValueError("¡Error! No se encontró el TOKEN en el archivo .env")
 bot = telebot.TeleBot(TOKEN)
 
 usuarios_activos = set()
@@ -105,26 +110,68 @@ HORARIOS_MERCADOS = {
 }
 
 def obtener_estado_mercados():
-    ahora_utc = datetime.utcnow().hour
+    ahora_utc = datetime.utcnow()
+    dia_semana = ahora_utc.weekday()  # 0=Lunes, 5=Sábado, 6=Domingo
     texto = "📅 *ESTADO DE LOS MERCADOS (UTC)*\n\n"
 
-    for mercado, (abre, cierra) in HORARIOS_MERCADOS.items():
-        h_abre = int(abre.split(':')[0])
-        h_cierra = int(cierra.split(':')[0])
+    # Verificación de Fin de Semana
+    es_finde = dia_semana >= 5 
 
-        if h_abre < h_cierra:
-            abierto = h_abre <= ahora_utc < h_cierra
+    for mercado, (abre_str, cierra_str) in HORARIOS_MERCADOS.items():
+        h_abre = int(abre_str.split(':')[0])
+        h_cierra = int(cierra_str.split(':')[0])
+        
+        # Crear objetos datetime para hoy para calcular diferencias
+        inicio = ahora_utc.replace(hour=h_abre, minute=0, second=0, microsecond=0)
+        fin = ahora_utc.replace(hour=h_cierra, minute=0, second=0, microsecond=0)
+
+        # Manejo de mercados que cruzan la medianoche (Sídney)
+        if h_abre > h_cierra:
+            if ahora_utc.hour >= h_abre:
+                fin += timedelta(days=1)
+            else:
+                inicio -= timedelta(days=1)
+
+        abierto = inicio <= ahora_utc < fin
+
+        # Lógica de Estado y Tiempo
+        if es_finde:
+            estado = "💤 FIN DE SEMANA"
+            # Calculamos para el lunes (dia 0)
+            dias_para_lunes = (7 - dia_semana)
+            proxima_apertura = inicio.replace(hour=h_abre) + timedelta(days=dias_para_lunes)
+            diff = proxima_apertura - ahora_utc
+            horas, rem = divmod(diff.seconds, 3600)
+            minutos, _ = divmod(rem, 60)
+            info_tiempo = f"⏳ Abre en: {diff.days}d {horas}h {minutos}m"
         else:
-            abierto = ahora_utc >= h_abre or ahora_utc < h_cierra
+            if abierto:
+                estado = "🟢 ABIERTO"
+                diff = fin - ahora_utc
+                horas, rem = divmod(diff.seconds, 3600)
+                minutos, _ = divmod(rem, 60)
+                info_tiempo = f"⏳ Cierra en: {horas}h {minutos}m"
+            else:
+                estado = "🔴 CERRADO"
+                # Si ya cerró hoy, la apertura es mañana
+                if ahora_utc >= fin:
+                    inicio += timedelta(days=1)
+                diff = inicio - ahora_utc
+                horas, rem = divmod(diff.seconds, 3600)
+                minutos, _ = divmod(rem, 60)
+                info_tiempo = f"⏳ Abre en: {horas}h {minutos}m"
 
-        estado = "🟢 ABIERTO" if abierto else "🔴 CERRADO"
-        texto += f"• *{mercado}:* {abre} - {cierra} | {estado}\n"
+        texto += f"• *{mercado}:* {estado}\n  └ {info_tiempo}\n\n"
 
     return texto
 
 def alerta_mercados():
-    ahora = datetime.utcnow().strftime('%H:%M')
+    ahora_dt = datetime.utcnow()
+    # No enviar alertas de apertura/cierre en fin de semana
+    if ahora_dt.weekday() >= 5:
+        return
 
+    ahora = ahora_dt.strftime('%H:%M')
     alertas = {
         "00:00": "🌏 *APERTURA ASIA*\n⚠️ Posibles movimientos en crypto",
         "08:00": "🇪🇺 *APERTURA LONDRES*\n📊 Entra volumen institucional",
