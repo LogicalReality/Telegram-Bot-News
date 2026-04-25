@@ -1,0 +1,76 @@
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+"""
+=== SQL SNIPPETS PARA SUPABASE ===
+Ejecuta esto en el SQL Editor de Supabase para crear las tablas:
+
+CREATE TABLE users (
+    chat_id BIGINT PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE sent_news (
+    news_hash TEXT PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+===================================
+"""
+
+load_dotenv()
+
+# Inicialización del cliente Supabase
+url: str = os.getenv("SUPABASE_URL", "")
+key: str = os.getenv("SUPABASE_KEY", "")
+
+if not url or not key:
+    print("⚠️ ADVERTENCIA: SUPABASE_URL o SUPABASE_KEY no están configurados.")
+
+try:
+    supabase: Client = create_client(url, key)
+except Exception as e:
+    supabase = None
+    print(f"Error inicializando Supabase: {e}")
+
+
+def get_all_users() -> list:
+    """Devuelve una lista con todos los chat_id de los usuarios."""
+    if not supabase: return []
+    try:
+        response = supabase.table("users").select("chat_id").execute()
+        return [user["chat_id"] for user in response.data]
+    except Exception as e:
+        print(f"Error en get_all_users: {e}")
+        return []
+
+def add_user(chat_id: int) -> bool:
+    """Añade un nuevo usuario. Si ya existe, no hace nada (Supabase ignorará o devolverá error que atrapamos)."""
+    if not supabase: return False
+    try:
+        # Usamos upsert para evitar errores si ya existe
+        supabase.table("users").upsert({"chat_id": chat_id}).execute()
+        return True
+    except Exception as e:
+        print(f"Error en add_user: {e}")
+        return False
+
+def is_news_sent(news_hash: str) -> bool:
+    """Comprueba si una noticia ya fue enviada buscando su hash."""
+    if not supabase: return False
+    try:
+        response = supabase.table("sent_news").select("news_hash").eq("news_hash", news_hash).execute()
+        return len(response.data) > 0
+    except Exception as e:
+        print(f"Error en is_news_sent: {e}")
+        return False
+
+def mark_news_sent(news_hash: str) -> bool:
+    """Guarda el hash de la noticia en la base de datos para marcarla como enviada."""
+    if not supabase: return False
+    try:
+        supabase.table("sent_news").upsert({"news_hash": news_hash}).execute()
+        return True
+    except Exception as e:
+        print(f"Error en mark_news_sent: {e}")
+        return False
