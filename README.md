@@ -66,6 +66,14 @@ Si todo sale bien, verás un JSON diciendo `"Webhook was set"`.
 - `bot/services.py`: Contiene la lógica pura (cálculos, APIs externas, RSS).
 - `bot/db.py`: Funciones auxiliares para interactuar con Supabase.
 
+## ⏰ Configuración del Monitor (Cada 15 min)
+
+Debido a que Vercel Hobby limita los Crons nativos a una vez al día, hemos implementado un **Trigger Externo** usando GitHub Actions:
+
+1. El archivo `.github/workflows/cron.yml` ya está configurado.
+2. Cada 15 minutos, GitHub lanzará un pequeño proceso que llamará a tu URL de Vercel para activar la búsqueda de noticias.
+3. Asegúrate de que tu URL en `.github/workflows/cron.yml` sea la correcta (reemplaza `telegram-bot-news.vercel.app` por tu dominio real si es diferente).
+
 ## 🛠 Comandos Disponibles en Telegram
 
 - `/start` - Suscribe al usuario a las alertas de noticias automáticas.
