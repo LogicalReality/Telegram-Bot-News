@@ -17,7 +17,6 @@ bot = telebot.TeleBot(token, threaded=False)
 
 @bot.message_handler(commands=['start'])
 def cmd_start(m):
-    print(f"DEBUG: Ejecutando comando /start para chat_id: {m.chat.id}")
     chat_id = m.chat.id
     if add_user(chat_id):
         bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Te has suscrito a las noticias de alto impacto.\n• /prices : Precios Cripto\n• /mercados : Estado de bolsas")
@@ -34,8 +33,6 @@ def cmd_mercados(m):
 
 @bot.message_handler(commands=['noticias'])
 def cmd_noticias(m):
-    # En la versión serverless, /noticias solo te dice que se ejecuta por Cron,
-    # pero podríamos forzar el disparo llamando a buscar_noticias aquí.
     bot.reply_to(m, "Las noticias son monitoreadas automáticamente cada 15 minutos. Serás notificado si hay impacto.")
 
 # ===== HANDLER PARA VERCEL =====
@@ -46,17 +43,6 @@ class handler(BaseHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
-            # Logs para depuración en Vercel
-            print(f"Mensaje recibido de Telegram: {post_data.decode('utf-8')}")
-            try:
-                me = bot.get_me()
-                print(f"✅ Bot verificado: @{me.username} (ID: {me.id})")
-            except Exception as e:
-                print(f"❌ ERROR de Token: No se pudo conectar con Telegram. Verifica tu TELEGRAM_TOKEN en Vercel. Error: {e}")
-
-            if not token:
-                print("❌ ERROR: TELEGRAM_TOKEN está vacío en las variables de entorno.")
-
             # Pasar la actualización a telebot
             json_string = post_data.decode('utf-8')
             update = telebot.types.Update.de_json(json_string)
