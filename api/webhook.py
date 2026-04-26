@@ -11,12 +11,13 @@ from bot.services import obtener_precios, obtener_estado_mercados
 from bot.db import add_user
 
 token = os.getenv('TELEGRAM_TOKEN', '')
-bot = telebot.TeleBot(token)
+bot = telebot.TeleBot(token, threaded=False)
 
 # ===== MANEJADORES DE COMANDOS =====
 
 @bot.message_handler(commands=['start'])
 def cmd_start(m):
+    print(f"DEBUG: Ejecutando comando /start para chat_id: {m.chat.id}")
     chat_id = m.chat.id
     if add_user(chat_id):
         bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Te has suscrito a las noticias de alto impacto.\n• /prices : Precios Cripto\n• /mercados : Estado de bolsas")
