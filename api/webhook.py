@@ -45,6 +45,11 @@ class handler(BaseHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
+            # Logs para depuración en Vercel
+            print(f"Mensaje recibido de Telegram: {post_data.decode('utf-8')}")
+            if not token:
+                print("❌ ERROR: TELEGRAM_TOKEN está vacío en las variables de entorno.")
+
             # Pasar la actualización a telebot
             json_string = post_data.decode('utf-8')
             update = telebot.types.Update.de_json(json_string)
