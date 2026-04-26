@@ -47,6 +47,12 @@ class handler(BaseHTTPRequestHandler):
             
             # Logs para depuración en Vercel
             print(f"Mensaje recibido de Telegram: {post_data.decode('utf-8')}")
+            try:
+                me = bot.get_me()
+                print(f"✅ Bot verificado: @{me.username} (ID: {me.id})")
+            except Exception as e:
+                print(f"❌ ERROR de Token: No se pudo conectar con Telegram. Verifica tu TELEGRAM_TOKEN en Vercel. Error: {e}")
+
             if not token:
                 print("❌ ERROR: TELEGRAM_TOKEN está vacío en las variables de entorno.")
 
