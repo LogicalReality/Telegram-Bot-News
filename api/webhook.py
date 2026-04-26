@@ -7,7 +7,7 @@ import telebot
 # Añadir el root del proyecto al path para importar bot.services
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from bot.services import obtener_precios, obtener_estado_mercados
+from bot.services import obtener_precios, obtener_estado_mercados, buscar_noticias
 from bot.db import add_user
 
 token = os.getenv('TELEGRAM_TOKEN', '')
@@ -19,7 +19,7 @@ bot = telebot.TeleBot(token, threaded=False)
 def cmd_start(m):
     chat_id = m.chat.id
     if add_user(chat_id):
-        bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Te has suscrito a las noticias de alto impacto.\n• /prices : Precios Cripto\n• /mercados : Estado de bolsas")
+        bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Te has suscrito a las noticias de alto impacto.\n• /prices : Precios Cripto\n• /mercados : Estado de bolsas\n• /noticias : Top noticias actuales")
     else:
         bot.reply_to(m, "⚠️ Hubo un error al suscribirte o la base de datos no está conectada.")
 
@@ -33,7 +33,14 @@ def cmd_mercados(m):
 
 @bot.message_handler(commands=['noticias'])
 def cmd_noticias(m):
-    bot.reply_to(m, "Las noticias son monitoreadas automáticamente cada 15 minutos. Serás notificado si hay impacto.")
+    bot.send_chat_action(m.chat.id, 'typing')
+    noticias = buscar_noticias()
+    if not noticias:
+        bot.reply_to(m, "No he encontrado noticias de alto impacto en los feeds en este momento.")
+    else:
+        bot.reply_to(m, "📰 **Top 3 Noticias de Impacto Actuales:**")
+        for n in noticias:
+            bot.send_message(m.chat.id, n['message'], parse_mode='Markdown')
 
 # ===== HANDLER PARA VERCEL =====
 
