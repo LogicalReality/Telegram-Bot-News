@@ -39,10 +39,15 @@ RSS_FEEDS = [
 
 def obtener_precios() -> str:
     try:
-        # Usamos api1 como espejo para evitar bloqueos de IP comunes en la API principal
-        url = "https://api1.binance.com/api/v3/ticker/price"
-        res = requests.get(url, timeout=10).json()
-        p = {i['symbol']: float(i['price']) for i in res if i['symbol'] in ["BTCUSDT", "ETHUSDT", "BNBUSDT"]}
+        # Consultamos solo los 3 símbolos que nos interesan para ser más eficientes
+        url = "https://api1.binance.com/api/v3/ticker/price?symbols=[\"BTCUSDT\",\"ETHUSDT\",\"BNBUSDT\"]"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code != 200:
+            return "❌ Binance está saturado ahora mismo. Inténtalo en unos minutos."
+            
+        res = response.json()
+        p = {i['symbol']: float(i['price']) for i in res}
         
         msg = "💰 **ACTUALIZACIÓN DE PRECIOS**\n\n"
         msg += f"• **BTC**: `${p.get('BTCUSDT', 0):,.2f}`\n"
