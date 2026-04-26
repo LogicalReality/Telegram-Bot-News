@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 from http.server import BaseHTTPRequestHandler
 import telebot
 
