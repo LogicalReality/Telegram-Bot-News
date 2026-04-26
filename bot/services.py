@@ -39,7 +39,8 @@ RSS_FEEDS = [
 
 def obtener_precios() -> str:
     try:
-        url = "https://api.binance.com/api/v3/ticker/price"
+        # Usamos api1 como espejo para evitar bloqueos de IP comunes en la API principal
+        url = "https://api1.binance.com/api/v3/ticker/price"
         res = requests.get(url, timeout=10).json()
         p = {i['symbol']: float(i['price']) for i in res if i['symbol'] in ["BTCUSDT", "ETHUSDT", "BNBUSDT"]}
         
