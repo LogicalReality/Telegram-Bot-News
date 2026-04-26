@@ -21,8 +21,14 @@ CREATE TABLE sent_news (
 load_dotenv()
 
 # Inicialización del cliente Supabase
-url: str = os.getenv("SUPABASE_URL", "")
-key: str = os.getenv("SUPABASE_KEY", "")
+url: str = os.getenv("SUPABASE_URL", "").strip()
+key: str = os.getenv("SUPABASE_KEY", "").strip()
+
+# Limpieza de URL para evitar el error "double rest/v1"
+if url.endswith("/rest/v1/"):
+    url = url[:-9]
+elif url.endswith("/rest/v1"):
+    url = url[:-8]
 
 if not url or not key:
     print("⚠️ ADVERTENCIA: SUPABASE_URL o SUPABASE_KEY no están configurados.")
