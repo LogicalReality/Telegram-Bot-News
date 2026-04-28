@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bot.services import buscar_noticias
-from bot.db import get_all_users, is_news_sent, mark_news_sent
+from bot.db import get_news_subscribers, is_news_sent, mark_news_sent
 import telebot
 
 token = os.getenv('TELEGRAM_TOKEN', '')
@@ -19,7 +19,7 @@ class handler(BaseHTTPRequestHandler):
         print("Ejecutando Cron Job...")
         
         noticias_nuevas = buscar_noticias()
-        usuarios = get_all_users()
+        usuarios = get_news_subscribers()
         
         enviadas_count = 0
         

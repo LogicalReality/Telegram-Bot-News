@@ -8,6 +8,7 @@ Ejecuta esto en el SQL Editor de Supabase para crear las tablas:
 
 CREATE TABLE users (
     chat_id BIGINT PRIMARY KEY,
+    news_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -15,6 +16,9 @@ CREATE TABLE sent_news (
     news_hash TEXT PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Si ya tenés la tabla users, agregá la columna nueva:
+-- ALTER TABLE users ADD COLUMN news_enabled BOOLEAN DEFAULT TRUE;
 ===================================
 """
 
@@ -50,16 +54,40 @@ def get_all_users() -> list:
         print(f"Error en get_all_users: {e}")
         return []
 
-def add_user(chat_id: int) -> bool:
-    """Añade un nuevo usuario. Si ya existe, no hace nada (Supabase ignorará o devolverá error que atrapamos)."""
-    if not supabase: return False
+def add_user(chat_id: int) -> str:
+    """Añade un usuario. Devuelve 'new', 'existing' o 'error'."""
+    if not supabase: return "error"
     try:
-        # Usamos upsert para evitar errores si ya existe
-        supabase.table("users").upsert({"chat_id": chat_id}).execute()
-        return True
+        response = supabase.table("users").select("chat_id").eq("chat_id", chat_id).execute()
+        if response.data:
+            return "existing"
+        supabase.table("users").insert({"chat_id": chat_id, "news_enabled": True}).execute()
+        return "new"
     except Exception as e:
         print(f"Error en add_user: {e}")
-        return False
+        return "error"
+
+
+def set_news_enabled(chat_id: int, enabled: bool) -> str:
+    """Activa o desactiva las noticias automáticas para un usuario. Devuelve 'ok' o 'error'."""
+    if not supabase: return "error"
+    try:
+        supabase.table("users").update({"news_enabled": enabled}).eq("chat_id", chat_id).execute()
+        return "ok"
+    except Exception as e:
+        print(f"Error en set_news_enabled: {e}")
+        return "error"
+
+
+def get_news_subscribers() -> list:
+    """Devuelve los chat_id de usuarios con news_enabled=True."""
+    if not supabase: return []
+    try:
+        response = supabase.table("users").select("chat_id").eq("news_enabled", True).execute()
+        return [user["chat_id"] for user in response.data]
+    except Exception as e:
+        print(f"Error en get_news_subscribers: {e}")
+        return []
 
 def is_news_sent(news_hash: str) -> bool:
     """Comprueba si una noticia ya fue enviada buscando su hash."""

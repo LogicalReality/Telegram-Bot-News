@@ -7,7 +7,7 @@ import telebot
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bot.services import obtener_precios, obtener_estado_mercados, buscar_noticias
-from bot.db import add_user
+from bot.db import add_user, set_news_enabled
 
 token = os.getenv('TELEGRAM_TOKEN', '')
 bot = telebot.TeleBot(token, threaded=False)
@@ -16,11 +16,39 @@ bot = telebot.TeleBot(token, threaded=False)
 
 @bot.message_handler(commands=['start'])
 def cmd_start(m):
-    chat_id = m.chat.id
-    if add_user(chat_id):
-        bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Te has suscrito a las noticias de alto impacto.\n• /prices : Precios Cripto\n• /mercados : Estado de bolsas\n• /noticias : Top noticias actuales")
+    result = add_user(m.chat.id)
+    if result == "new":
+        bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Suscrito a noticias automáticas.\n• /help : Ver comandos disponibles")
+    elif result == "existing":
+        bot.reply_to(m, "⚠️ Ya estás suscrito. Usá /help para ver los comandos.")
     else:
-        bot.reply_to(m, "⚠️ Hubo un error al suscribirte o la base de datos no está conectada.")
+        bot.reply_to(m, "❌ Error de conexión con la base de datos. Intentá más tarde.")
+
+@bot.message_handler(commands=['help'])
+def cmd_help(m):
+    bot.reply_to(m, "📋 **Comandos disponibles:**\n\n"
+                    "• /start — Suscribirse al bot\n"
+                    "• /subscribe — Activar noticias automáticas\n"
+                    "• /unsubscribe — Desactivar noticias automáticas\n"
+                    "• /prices — Precios de BTC, ETH y BNB\n"
+                    "• /mercados — Estado de bolsas mundiales\n"
+                    "• /noticias — Top 3 noticias de impacto")
+
+@bot.message_handler(commands=['subscribe'])
+def cmd_subscribe(m):
+    result = set_news_enabled(m.chat.id, True)
+    if result == "ok":
+        bot.reply_to(m, "✅ Noticias automáticas **activadas**. Recibirás noticias cada 15 min.")
+    else:
+        bot.reply_to(m, "❌ Primero debés usar /start para registrarte, o hay un error de conexión.")
+
+@bot.message_handler(commands=['unsubscribe'])
+def cmd_unsubscribe(m):
+    result = set_news_enabled(m.chat.id, False)
+    if result == "ok":
+        bot.reply_to(m, "🔇 Noticias automáticas **desactivadas**. Usá /subscribe para reactivar.")
+    else:
+        bot.reply_to(m, "❌ Primero debés usar /start para registrarte, o hay un error de conexión.")
 
 @bot.message_handler(commands=['prices'])
 def cmd_prices(m):
