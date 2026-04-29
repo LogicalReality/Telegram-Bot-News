@@ -69,10 +69,10 @@ def add_user(chat_id: int) -> str:
 
 
 def set_news_enabled(chat_id: int, enabled: bool) -> str:
-    """Activa o desactiva las noticias automáticas para un usuario. Devuelve 'ok' o 'error'."""
+    """Activa o desactiva las noticias automáticas para un usuario. Crea el usuario si no existe. Devuelve 'ok' o 'error'."""
     if not supabase: return "error"
     try:
-        supabase.table("users").update({"news_enabled": enabled}).eq("chat_id", chat_id).execute()
+        supabase.table("users").upsert({"chat_id": chat_id, "news_enabled": enabled}).execute()
         return "ok"
     except Exception as e:
         print(f"Error en set_news_enabled: {e}")
