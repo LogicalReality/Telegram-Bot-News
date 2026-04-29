@@ -19,6 +19,8 @@ CREATE TABLE sent_news (
 
 -- Si ya tenés la tabla users, agregá la columna nueva:
 -- ALTER TABLE users ADD COLUMN news_enabled BOOLEAN DEFAULT TRUE;
+
+-- Ver supabase_migration.sql para tablas adicionales (command_log, bot_health)
 ===================================
 """
 
@@ -133,3 +135,101 @@ def ban_user(chat_id: int) -> str:
     except Exception as e:
         print(f"Error en ban_user: {e}")
         return "error"
+
+
+def log_command(chat_id: int, command: str) -> None:
+    """Registra un comando ejecutado en command_log."""
+    if not supabase: return
+    try:
+        supabase.table("command_log").insert({
+            "chat_id": chat_id,
+            "command": command
+        }).execute()
+    except Exception as e:
+        print(f"Error en log_command: {e}")
+
+
+def update_bot_health(status: str = "ok") -> None:
+    """Actualiza el registro de health del bot (último cron exitoso)."""
+    if not supabase: return
+    try:
+        supabase.table("bot_health").update({
+            "last_cron_at": "now()",
+            "last_cron_status": status,
+            "updated_at": "now()"
+        }).eq("id", 1).execute()
+    except Exception as e:
+        print(f"Error en update_bot_health: {e}")
+
+
+def get_dashboard_stats() -> dict:
+    """Devuelve todas las métricas para el dashboard público."""
+    if not supabase:
+        return {"error": "Sin conexión a Supabase"}
+
+    try:
+        # 1. Estadísticas generales de usuarios
+        users_data = supabase.table("users").select("news_enabled, created_at").execute()
+        total_users = len(users_data.data)
+        subscribed = sum(1 for u in users_data.data if u["news_enabled"])
+
+        # 2. Últimas 24h de command_log
+        from datetime import datetime, timedelta
+        yesterday = (datetime.utcnow() - timedelta(days=1)).isoformat()
+        week_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
+
+        recent_commands = supabase.table("command_log").select("command, created_at").gte("created_at", week_ago).execute()
+        total_commands_week = len(recent_commands.data)
+
+        # Comandos por tipo (última semana)
+        commands_by_type = {}
+        for entry in recent_commands.data:
+            cmd = entry["command"]
+            commands_by_type[cmd] = commands_by_type.get(cmd, 0) + 1
+
+        # Comandos por día (últimos 7 días)
+        commands_by_day = {}
+        for entry in recent_commands.data:
+            day = entry["created_at"][:10]
+            commands_by_day[day] = commands_by_day.get(day, 0) + 1
+
+        # 3. Noticias enviadas (última semana)
+        recent_news = supabase.table("sent_news").select("created_at").gte("created_at", week_ago).execute()
+        news_by_day = {}
+        for entry in recent_news.data:
+            day = entry["created_at"][:10]
+            news_by_day[day] = news_by_day.get(day, 0) + 1
+
+        # 4. Usuarios nuevos por día (última semana)
+        new_users_by_day = {}
+        for u in users_data.data:
+            created = u.get("created_at", "")
+            if created and created >= week_ago:
+                day = created[:10]
+                new_users_by_day[day] = new_users_by_day.get(day, 0) + 1
+
+        # 5. Bot health
+        health = supabase.table("bot_health").select("*").eq("id", 1).execute()
+        health_data = health.data[0] if health.data else None
+
+        # 6. Total de noticias enviadas (histórico)
+        total_news = supabase.table("sent_news").select("news_hash", count="exact").execute()
+        total_news_count = total_news.count if hasattr(total_news, 'count') else len(total_news.data)
+
+        return {
+            "total_users": total_users,
+            "subscribed": subscribed,
+            "unsubscribed": total_users - subscribed,
+            "total_commands_week": total_commands_week,
+            "commands_by_type": commands_by_type,
+            "commands_by_day": commands_by_day,
+            "news_by_day": news_by_day,
+            "new_users_by_day": new_users_by_day,
+            "total_news_sent": total_news_count,
+            "last_cron_at": health_data["last_cron_at"] if health_data else None,
+            "last_cron_status": health_data["last_cron_status"] if health_data else None,
+            "updated_at": health_data["updated_at"] if health_data else None,
+        }
+    except Exception as e:
+        print(f"Error en get_dashboard_stats: {e}")
+        return {"error": str(e)}

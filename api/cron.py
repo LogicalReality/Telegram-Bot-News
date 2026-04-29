@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bot.services import buscar_noticias
-from bot.db import get_news_subscribers, is_news_sent, mark_news_sent
+from bot.db import get_news_subscribers, is_news_sent, mark_news_sent, update_bot_health
 import telebot
 
 token = os.getenv('TELEGRAM_TOKEN', '')
@@ -43,3 +43,6 @@ class handler(BaseHTTPRequestHandler):
         
         res = f'{{"status": "ok", "news_sent": {enviadas_count}}}'
         self.wfile.write(res.encode('utf-8'))
+        
+        # Registrar ejecución exitosa para el dashboard
+        update_bot_health("ok")

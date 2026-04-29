@@ -8,7 +8,7 @@ import telebot
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bot.services import obtener_precios, obtener_estado_mercados, buscar_noticias
-from bot.db import add_user, set_news_enabled, get_user_stats, ban_user, get_all_users
+from bot.db import add_user, set_news_enabled, get_user_stats, ban_user, get_all_users, log_command
 
 token = os.getenv('TELEGRAM_TOKEN', '')
 bot = telebot.TeleBot(token, threaded=False)
@@ -31,6 +31,7 @@ def admin_only(func):
 
 @bot.message_handler(commands=['start'])
 def cmd_start(m):
+    log_command(m.chat.id, '/start')
     result = add_user(m.chat.id)
     status = result.get("status")
     news_on = result.get("news_enabled", True)
@@ -45,6 +46,7 @@ def cmd_start(m):
 
 @bot.message_handler(commands=['help'])
 def cmd_help(m):
+    log_command(m.chat.id, '/help')
     text = ("📋 **Comandos disponibles:**\n\n"
             "• /start — Suscribirse al bot\n"
             "• /subscribe — Activar noticias automáticas\n"
@@ -61,6 +63,7 @@ def cmd_help(m):
 
 @bot.message_handler(commands=['subscribe'])
 def cmd_subscribe(m):
+    log_command(m.chat.id, '/subscribe')
     result = set_news_enabled(m.chat.id, True)
     if result == "ok":
         bot.reply_to(m, "✅ Noticias automáticas **activadas**. Recibirás noticias cada 15 min. Usá /unsubscribe para desactivar.")
@@ -69,6 +72,7 @@ def cmd_subscribe(m):
 
 @bot.message_handler(commands=['unsubscribe'])
 def cmd_unsubscribe(m):
+    log_command(m.chat.id, '/unsubscribe')
     result = set_news_enabled(m.chat.id, False)
     if result == "ok":
         bot.reply_to(m, "🔇 Noticias automáticas **desactivadas**. Seguís pudiendo usar /noticias para consultar a demanda. Usá /subscribe para reactivar.")
@@ -77,14 +81,17 @@ def cmd_unsubscribe(m):
 
 @bot.message_handler(commands=['prices'])
 def cmd_prices(m):
+    log_command(m.chat.id, '/prices')
     bot.send_message(m.chat.id, obtener_precios(), parse_mode='Markdown')
 
 @bot.message_handler(commands=['mercados'])
 def cmd_mercados(m):
+    log_command(m.chat.id, '/mercados')
     bot.send_message(m.chat.id, obtener_estado_mercados(), parse_mode='Markdown')
 
 @bot.message_handler(commands=['noticias'])
 def cmd_noticias(m):
+    log_command(m.chat.id, '/noticias')
     bot.send_chat_action(m.chat.id, 'typing')
     noticias = buscar_noticias()
     if not noticias:
@@ -99,6 +106,7 @@ def cmd_noticias(m):
 @bot.message_handler(commands=['stats'])
 @admin_only
 def cmd_stats(m):
+    log_command(m.chat.id, '/stats')
     stats = get_user_stats()
     bot.reply_to(m, f"📊 **Estadísticas de usuarios:**\n\n"
                      f"• Total registrados: {stats['total']}\n"
@@ -108,6 +116,7 @@ def cmd_stats(m):
 @bot.message_handler(commands=['broadcast'])
 @admin_only
 def cmd_broadcast(m):
+    log_command(m.chat.id, '/broadcast')
     # Extraer el mensaje después de /broadcast
     text = m.text.replace('/broadcast', '', 1).strip()
     if not text:
@@ -134,6 +143,7 @@ def cmd_broadcast(m):
 @bot.message_handler(commands=['ban'])
 @admin_only
 def cmd_ban(m):
+    log_command(m.chat.id, '/ban')
     # Extraer el chat_id después de /ban
     parts = m.text.split()
     if len(parts) != 2:
