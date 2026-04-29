@@ -108,3 +108,28 @@ def mark_news_sent(news_hash: str) -> bool:
     except Exception as e:
         print(f"Error en mark_news_sent: {e}")
         return False
+
+def get_user_stats() -> dict:
+    """Devuelve estadísticas de usuarios: total, suscritos y desuscritos."""
+    if not supabase: return {"total": 0, "subscribed": 0, "unsubscribed": 0}
+    try:
+        response = supabase.table("users").select("news_enabled").execute()
+        total = len(response.data)
+        subscribed = sum(1 for u in response.data if u["news_enabled"])
+        return {"total": total, "subscribed": subscribed, "unsubscribed": total - subscribed}
+    except Exception as e:
+        print(f"Error en get_user_stats: {e}")
+        return {"total": 0, "subscribed": 0, "unsubscribed": 0}
+
+def ban_user(chat_id: int) -> str:
+    """Elimina un usuario de la tabla. Devuelve 'deleted', 'not_found' o 'error'."""
+    if not supabase: return "error"
+    try:
+        response = supabase.table("users").select("chat_id").eq("chat_id", chat_id).execute()
+        if not response.data:
+            return "not_found"
+        supabase.table("users").delete().eq("chat_id", chat_id).execute()
+        return "deleted"
+    except Exception as e:
+        print(f"Error en ban_user: {e}")
+        return "error"
