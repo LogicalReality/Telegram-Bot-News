@@ -54,18 +54,18 @@ def get_all_users() -> list:
         print(f"Error en get_all_users: {e}")
         return []
 
-def add_user(chat_id: int) -> str:
-    """Añade un usuario. Devuelve 'new', 'existing' o 'error'."""
-    if not supabase: return "error"
+def add_user(chat_id: int) -> dict:
+    """Añade un usuario. Devuelve dict con status y news_enabled."""
+    if not supabase: return {"status": "error"}
     try:
-        response = supabase.table("users").select("chat_id").eq("chat_id", chat_id).execute()
+        response = supabase.table("users").select("chat_id, news_enabled").eq("chat_id", chat_id).execute()
         if response.data:
-            return "existing"
+            return {"status": "existing", "news_enabled": response.data[0]["news_enabled"]}
         supabase.table("users").insert({"chat_id": chat_id, "news_enabled": True}).execute()
-        return "new"
+        return {"status": "new", "news_enabled": True}
     except Exception as e:
         print(f"Error en add_user: {e}")
-        return "error"
+        return {"status": "error"}
 
 
 def set_news_enabled(chat_id: int, enabled: bool) -> str:

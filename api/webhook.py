@@ -17,10 +17,14 @@ bot = telebot.TeleBot(token, threaded=False)
 @bot.message_handler(commands=['start'])
 def cmd_start(m):
     result = add_user(m.chat.id)
-    if result == "new":
+    status = result.get("status")
+    news_on = result.get("news_enabled", True)
+    if status == "new":
         bot.reply_to(m, "🚀 **Bot Serverless Activo**\n• Suscrito a noticias automáticas.\n• /help : Ver comandos disponibles")
-    elif result == "existing":
-        bot.reply_to(m, "⚠️ Ya estás suscrito. Usá /help para ver los comandos.")
+    elif status == "existing":
+        state = "**activadas**" if news_on else "**desactivadas**"
+        toggle = "/unsubscribe para desactivar" if news_on else "/subscribe para reactivar"
+        bot.reply_to(m, f"🤖 **Ya estás registrado.** Las noticias automáticas están {state}. Usá {toggle} o /help para ver comandos.")
     else:
         bot.reply_to(m, "❌ Error de conexión con la base de datos. Intentá más tarde.")
 
