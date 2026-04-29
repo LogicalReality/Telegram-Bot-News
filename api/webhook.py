@@ -38,7 +38,7 @@ def cmd_help(m):
 def cmd_subscribe(m):
     result = set_news_enabled(m.chat.id, True)
     if result == "ok":
-        bot.reply_to(m, "✅ Noticias automáticas **activadas**. Recibirás noticias cada 15 min.")
+        bot.reply_to(m, "✅ Noticias automáticas **activadas**. Recibirás noticias cada 15 min. Usá /unsubscribe para desactivar.")
     else:
         bot.reply_to(m, "❌ Primero debés usar /start para registrarte, o hay un error de conexión.")
 
@@ -46,7 +46,7 @@ def cmd_subscribe(m):
 def cmd_unsubscribe(m):
     result = set_news_enabled(m.chat.id, False)
     if result == "ok":
-        bot.reply_to(m, "🔇 Noticias automáticas **desactivadas**. Usá /subscribe para reactivar.")
+        bot.reply_to(m, "🔇 Noticias automáticas **desactivadas**. Seguís pudiendo usar /noticias para consultar a demanda. Usá /subscribe para reactivar.")
     else:
         bot.reply_to(m, "❌ Primero debés usar /start para registrarte, o hay un error de conexión.")
 
