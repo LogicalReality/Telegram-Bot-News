@@ -21,6 +21,7 @@ Para desplegar tu propio bot gratis, sigue estos pasos:
 ```sql
 CREATE TABLE users (
     chat_id BIGINT PRIMARY KEY,
+    news_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -28,6 +29,23 @@ CREATE TABLE sent_news (
     news_hash TEXT PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE command_log (
+    id BIGSERIAL PRIMARY KEY,
+    chat_id BIGINT NOT NULL,
+    command TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE bot_health (
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    last_cron_at TIMESTAMPTZ DEFAULT now(),
+    last_cron_status TEXT DEFAULT 'ok',
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO bot_health (id, last_cron_at, last_cron_status)
+VALUES (1, now(), 'ok') ON CONFLICT DO NOTHING;
 ```
 
 3. Ve a `Project Settings -> API` y guarda tu **URL** y tu **anon/public KEY**.
@@ -62,9 +80,11 @@ Si todo sale bien, verás un JSON diciendo `"Webhook was set"`.
 ## 📂 Estructura del Proyecto
 
 - `api/webhook.py`: El punto de entrada que Telegram llama cuando alguien escribe un comando.
-- `api/cron.py`: El script que Vercel llama automáticamente cada 15 minutos (configurado en `vercel.json`) para buscar noticias.
+- `api/cron.py`: El script que Vercel llama automáticamente cada 15 min. para buscar noticias.
+- `api/stats.py`: Endpoint para el dashboard público de estadísticas.
 - `bot/services.py`: Contiene la lógica pura (cálculos, APIs externas, RSS).
 - `bot/db.py`: Funciones auxiliares para interactuar con Supabase.
+- `public/index.html`: Dashboard público de analíticas y estado del bot.
 
 ## ⏰ Configuración del Monitor (Cada 15 min)
 
@@ -76,7 +96,17 @@ Debido a que Vercel Hobby limita los Crons nativos a una vez al día, hemos impl
 
 ## 🛠 Comandos Disponibles en Telegram
 
-- `/start` - Suscribe al usuario a las alertas de noticias automáticas.
+- `/start` - Inicia el bot y suscribe al usuario a alertas (o muestra su estado).
+- `/subscribe` - Activa las noticias automáticas.
+- `/unsubscribe` - Desactiva las noticias automáticas.
 - `/prices` - Devuelve el precio actual de BTC, ETH y BNB.
 - `/mercados` - Informa qué bolsas mundiales están abiertas en este momento.
-- `/noticias` - Información sobre el estado del monitor de noticias.
+- `/noticias` - Top 3 noticias de impacto en demanda.
+
+### 👑 Comandos de Administrador
+
+*(Requieren que tu Chat ID coincida con el `ADMIN_CHAT_ID` configurado en el código)*
+
+- `/stats` - Muestra estadísticas de usuarios (totales, suscritos, desuscritos).
+- `/broadcast <mensaje>` - Envía un mensaje masivo a todos los usuarios.
+- `/ban <chat_id>` - Elimina un usuario de la base de datos.
