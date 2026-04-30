@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -153,10 +154,11 @@ def update_bot_health(status: str = "ok") -> None:
     """Actualiza el registro de health del bot (último cron exitoso)."""
     if not supabase: return
     try:
+        now = datetime.now(timezone.utc).isoformat()
         supabase.table("bot_health").update({
-            "last_cron_at": "now()",
+            "last_cron_at": now,
             "last_cron_status": status,
-            "updated_at": "now()"
+            "updated_at": now
         }).eq("id", 1).execute()
     except Exception as e:
         print(f"Error en update_bot_health: {e}")

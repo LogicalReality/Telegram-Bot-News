@@ -192,11 +192,15 @@
                 const cronAge = data.last_cron_at
                     ? (Date.now() - new Date(data.last_cron_at).getTime()) / 60000
                     : Infinity;
+                
+                // Umbrales para cron diario (1440 min):
+                // < 25h (1500m) = OK
+                // < 48h (2880m) = Warn
                 statusDot.className = 'status-dot ' + (
-                    cronAge < 30 ? 'ok' : cronAge < 120 ? 'warn' : 'err'
+                    cronAge < 1500 ? 'ok' : cronAge < 2880 ? 'warn' : 'err'
                 );
                 document.getElementById('cronStatus').textContent =
-                    cronAge < 30 ? 'Bot activo' : cronAge < 120 ? 'Bot inactivo (último cron hace rato)' : 'Bot caído o sin datos de cron';
+                    cronAge < 1500 ? 'Bot activo' : cronAge < 2880 ? 'Bot inactivo (último cron hace rato)' : 'Bot caído o sin datos de cron';
 
                 const lastEl = document.getElementById('lastCron');
                 if (data.last_cron_at) {
@@ -223,7 +227,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="label">Estado del Bot</div>
-                        <div class="value" style="font-size:1.25rem;color:${cronAge < 30 ? '#3fb950' : '#d29922'}">${cronAge < 30 ? '✓ Operativo' : '⚠ Revisar cron'}</div>
+                        <div class="value" style="font-size:1.25rem;color:${cronAge < 1500 ? '#3fb950' : '#d29922'}">${cronAge < 1500 ? '✓ Operativo' : '⚠ Revisar cron'}</div>
                     </div>
                 `;
 
