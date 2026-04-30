@@ -119,10 +119,19 @@ def cmd_broadcast(m):
     log_command(m.chat.id, '/broadcast')
     # Extraer el mensaje después de /broadcast
     text = m.text.replace('/broadcast', '', 1).strip()
+    
+    # Si no hay texto, intentar sacar el texto del mensaje original (reply)
+    if not text and m.reply_to_message:
+        text = m.reply_to_message.text or m.reply_to_message.caption or ""
+        # Limpiar separador si viene de GitHub Actions
+        if "\n---\n⚠️ *Para enviar a todos" in text:
+            text = text.split("\n---\n⚠️ *Para enviar a todos")[0].strip()
+            
     if not text:
-        bot.reply_to(m, "❌ Usá: /broadcast <mensaje>")
+        bot.reply_to(m, "❌ Usá: /broadcast <mensaje> o respondé a un mensaje con /broadcast")
         return
     
+    # Enviar a TODOS los usuarios registrados (suscritos y no suscritos)
     users = get_all_users()
     if not users:
         bot.reply_to(m, "❌ No hay usuarios registrados.")
