@@ -95,6 +95,15 @@ Debido a que Vercel Hobby limita los Crons nativos a una vez al día, hemos impl
 2. Cada 15 minutos, GitHub lanzará un pequeño proceso que llamará a tu URL de Vercel para activar la búsqueda de noticias.
 3. Asegúrate de que tu URL en `.github/workflows/cron.yml` sea la correcta (reemplaza `telegram-bot-news.vercel.app` por tu dominio real si es diferente).
 
+## 🚀 Notificaciones de Release
+
+Tenemos un GitHub Action configurado para notificarte automáticamente en Telegram cada vez que publiques un Release. Para que esto funcione, **debes configurar dos Secrets en tu repositorio de GitHub**:
+
+1. Ve a `Settings` > `Secrets and variables` > `Actions` > `New repository secret`.
+2. Agrega `TELEGRAM_TOKEN` (tu token de BotFather).
+3. Agrega `ADMIN_CHAT_ID` (tu ID de Telegram).
+Si no agregas estos Secrets, el Action de notificación simplemente fallará y no enviará el mensaje (pero el resto del bot seguirá funcionando).
+
 ## 🛠 Comandos Disponibles en Telegram
 
 - `/start` - Inicia el bot y suscribe al usuario a alertas (o muestra su estado).
@@ -107,6 +116,9 @@ Debido a que Vercel Hobby limita los Crons nativos a una vez al día, hemos impl
 ### 👑 Comandos de Administrador
 
 *(Requieren que tu Chat ID coincida con la variable de entorno `ADMIN_CHAT_ID` configurada en Vercel)*
+
+> [!IMPORTANT]
+> **Sobre `ADMIN_CHAT_ID` en Vercel:** Es obligatorio agregar esta variable en tu panel de Vercel (`Settings -> Environment Variables`) con tu ID de Telegram. Si no lo haces, el bot asumirá que tu ID es `0` y te denegará el acceso a estos comandos, respondiendo con un mensaje de error de permisos.
 
 - `/stats` - Muestra estadísticas de usuarios (totales, suscritos, desuscritos).
 - `/broadcast <mensaje>` - Envía un mensaje masivo a todos los usuarios. (También puedes responder a un mensaje con `/broadcast` para reenviarlo).
