@@ -58,6 +58,7 @@ Crea un archivo `.env` en la raíz de este proyecto (solo para desarrollo local)
 TELEGRAM_TOKEN=tu_token_de_botfather
 SUPABASE_URL=tu_url_de_supabase
 SUPABASE_KEY=tu_key_anon_de_supabase
+ADMIN_CHAT_ID=tu_id_de_telegram
 ```
 
 ### 3. Despliegue en Vercel
@@ -105,8 +106,8 @@ Debido a que Vercel Hobby limita los Crons nativos a una vez al día, hemos impl
 
 ### 👑 Comandos de Administrador
 
-*(Requieren que tu Chat ID coincida con el `ADMIN_CHAT_ID` configurado en el código)*
+*(Requieren que tu Chat ID coincida con la variable de entorno `ADMIN_CHAT_ID` configurada en Vercel)*
 
 - `/stats` - Muestra estadísticas de usuarios (totales, suscritos, desuscritos).
-- `/broadcast <mensaje>` - Envía un mensaje masivo a todos los usuarios.
+- `/broadcast <mensaje>` - Envía un mensaje masivo a todos los usuarios. (También puedes responder a un mensaje con `/broadcast` para reenviarlo).
 - `/ban <chat_id>` - Elimina un usuario de la base de datos.

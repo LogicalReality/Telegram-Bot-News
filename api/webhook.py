@@ -13,7 +13,8 @@ from bot.db import add_user, set_news_enabled, get_user_stats, ban_user, get_all
 token = os.getenv('TELEGRAM_TOKEN', '')
 bot = telebot.TeleBot(token, threaded=False)
 
-ADMIN_CHAT_ID = 602694816
+# Convertimos la variable de entorno a entero, con fallback a 0 si no existe
+ADMIN_CHAT_ID = int(os.getenv('ADMIN_CHAT_ID', '0'))
 
 # ===== DECORADOR ADMIN =====
 
