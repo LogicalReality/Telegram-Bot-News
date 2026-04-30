@@ -15,7 +15,7 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
           message: |
-            🚀 *Nuevo Release Publicado: ${{ github.event.release.name }}*
+            🚀 *El bot se ha actualizado: ${{ github.event.release.name }}*
             
             ${{ github.event.release.body }}
             
